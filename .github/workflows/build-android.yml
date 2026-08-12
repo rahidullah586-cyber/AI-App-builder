@@ -39,18 +39,22 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Patch Kotlin version to 1.9.25
+      - name: Force Kotlin 1.9.25 everywhere
         run: |
           cd android
-          # Force Kotlin 1.9.25 in build.gradle (match Compose Compiler 1.5.15)
+          # 1. Set kotlinVersion variable
           sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/" build.gradle
-          # Also set via properties as fallback
+          # 2. Explicitly set kotlin-gradle-plugin version in classpath
+          sed -i "s/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')/classpath(\"org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25\")/" build.gradle
+          # 3. Set in gradle.properties too
           echo '' >> gradle.properties
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
           echo 'kotlinVersion=1.9.25' >> gradle.properties
-          # Verify
-          grep kotlinVersion build.gradle | head -1
-          grep kotlinVersion gradle.properties | head -2
+          # 4. Verify
+          echo '=== build.gradle ===' 
+          grep -i 'kotlin' build.gradle | head -5
+          echo '=== gradle.properties ==='
+          grep -i 'kotlin' gradle.properties | head -5
 
       - name: Build Debug APK
         run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
