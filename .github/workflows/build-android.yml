@@ -41,13 +41,9 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Configure signing & Kotlin
+      - name: Fix Kotlin + configure release signing
         run: |
-          cd android/app
-          # Generate debug keystore for release signing (self-signed)
-          keytool -genkeypair -v -keystore release.keystore -alias zai -keyalg RSA -keysize 2048 -validity 10000 -storepass zaiapp123 -keypass zaiapp123 -dname "CN=Z AI, OU=Dev, O=ZAI, L=Islamabad, ST=ISB, C=PK"
-
-          cd ..
+          cd android
 
           # Fix Kotlin version
           sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/" build.gradle
@@ -55,39 +51,35 @@ jobs:
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
           echo 'kotlinVersion=1.9.25' >> gradle.properties
 
-          # Configure release signing
-          cat >> app/build.gradle << 'EOF'
-          android {
-            signingConfigs {
-              release {
-                storeFile file('release.keystore')
-                storePassword 'zaiapp123'
-                keyAlias 'zai'
-                keyPassword 'zaiapp123'
-              }
-            }
-            buildTypes {
-              release {
-                signingConfig signingConfigs.release
-                minifyEnabled true
-                shrinkResources true
-                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
-              }
-            }
-          }
-          EOF
+          # Inject release signing config into app/build.gradle
+          # Use Python for reliable multi-line insertion
+          python3 << 'PYEOF'
+          import re
 
-          # Create proguard rules
-          cat > proguard-rules.pro << 'EOF'
-          -keep class com.facebook.react.** { *; }
-          -keep class expo.** { *; }
-          -dontwarn com.facebook.**
-          -keepattributes *Annotation*
-          -keep class * extends com.facebook.react.bridge.NativeModule { *; }
-          -keep class * extends com.facebook.react.bridge.ReactContextBaseJavaModule { *; }
-          -keep class * extends com.facebook.react.uimanager.ViewGroupManager { *; }
-          -keepclassmembers class * { <methods>; }
-          EOF
+          with open('app/build.gradle', 'r') as f:
+              content = f.read()
+
+          # Replace the release buildType to use debug signing and disable minification
+          # Find the release block inside buildTypes
+          pattern = r'(release\s*\{[^}]*?)'
+          replacement = r'''release {
+                signingConfig signingConfigs.debug
+                minifyEnabled false
+                shrinkResources false
+            '''
+
+          # Only replace the first occurrence inside buildTypes
+          content = re.sub(pattern, replacement, content, count=1)
+
+          with open('app/build.gradle', 'w') as f:
+              f.write(content)
+
+          print('Release buildType updated successfully')
+          PYEOF
+
+          # Verify the change
+          echo '=== Release buildType in app/build.gradle ==='
+          grep -A 5 'release {' app/build.gradle | head -10
 
       - name: Build Release APK
         run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
@@ -106,18 +98,17 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.1.0
-          name: "Z AI App v1.1.0"
+          tag_name: v1.2.0
+          name: "Z AI App v1.2.0"
           body: |-
-            ## Z AI - Android App (Lightweight)
-            Release build | 5 Color Themes | Chat UI | WebView Mode
+            ## Z AI - Android App (Lightweight Release)
+            Built with Expo | 5 Color Themes | Chat UI | WebView Mode
 
             ### Features
             - Native chat interface
             - WebView mode for full Z AI web experience
-            - 5 attractive color themes (Indigo, Aurora, Sunset, Ocean, Rose)
-            - Conversation history with search & pin
-            - Persistent memory system
+            - 5 color themes (Indigo, Aurora, Sunset, Ocean, Rose)
+            - Conversation history
             - Dark/Light/System mode
           files: android/app/build/outputs/apk/release/*.apk
         env:
