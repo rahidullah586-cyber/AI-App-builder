@@ -51,35 +51,21 @@ jobs:
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
           echo 'kotlinVersion=1.9.25' >> gradle.properties
 
-          # Inject release signing config into app/build.gradle
-          # Use Python for reliable multi-line insertion
+          # Make release use debug signing (avoids keystore generation issues)
           python3 << 'PYEOF'
           import re
-
           with open('app/build.gradle', 'r') as f:
               content = f.read()
-
-          # Replace the release buildType to use debug signing and disable minification
-          # Find the release block inside buildTypes
           pattern = r'(release\s*\{[^}]*?)'
-          replacement = r'''release {
+          replacement = '''release {
                 signingConfig signingConfigs.debug
                 minifyEnabled false
-                shrinkResources false
             '''
-
-          # Only replace the first occurrence inside buildTypes
           content = re.sub(pattern, replacement, content, count=1)
-
           with open('app/build.gradle', 'w') as f:
               f.write(content)
-
-          print('Release buildType updated successfully')
+          print('Release signing configured')
           PYEOF
-
-          # Verify the change
-          echo '=== Release buildType in app/build.gradle ==='
-          grep -A 5 'release {' app/build.gradle | head -10
 
       - name: Build Release APK
         run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
@@ -98,18 +84,28 @@ jobs:
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.2.0
-          name: "Z AI App v1.2.0"
+          tag_name: v2.0.0
+          name: "Z AI App v2.0.0 - Real Z AI"
           body: |-
-            ## Z AI - Android App (Lightweight Release)
-            Built with Expo | 5 Color Themes | Chat UI | WebView Mode
+            ## Z AI - Real Android App
+
+            This is the **real Z AI app** that connects to z.ai with your actual account.
 
             ### Features
-            - Native chat interface
-            - WebView mode for full Z AI web experience
-            - 5 color themes (Indigo, Aurora, Sunset, Ocean, Rose)
-            - Conversation history
-            - Dark/Light/System mode
+            - Opens real Z AI web interface (z.ai)
+            - Login with your real Z AI account
+            - Full AI chat with all Z AI capabilities
+            - Native bottom navigation bar
+            - Back/forward/refresh controls
+            - Pull to refresh
+            - Share functionality
+            - Dark theme
+
+            ### How to use
+            1. Download and install the APK
+            2. Open the app
+            3. Login to your Z AI account
+            4. Start chatting with real AI!
           files: android/app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
