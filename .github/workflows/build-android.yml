@@ -39,32 +39,43 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Fix Kotlin version & Compose compatibility
+      - name: Fix Kotlin & Compose compatibility
         run: |
           cd android
-          # Force Kotlin 1.9.25 to match Compose Compiler 1.5.15
-          sed -i "s/kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.24'/kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.25'/g" build.gradle
-          # Also set it via gradle.properties
+          # Replace the entire kotlinVersion line and force 1.9.25
+          sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/g" build.gradle
+          # Also force it in gradle.properties
+          echo '' >> gradle.properties
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
-          echo 'kotlinVersion=1.9.25' >> gradle.properties
-          # Suppress Compose compiler version check as backup
-          echo 'android.suppressUnsupportedOptionKotlinVersionCompatibilityCheck=true' >> gradle.properties
-          cat build.gradle | head -15
-          echo '---gradle.properties---'
-          cat gradle.properties | tail -10
+          # Print to verify
+          echo '=== build.gradle kotlin ===' 
+          rg 'kotlinVersion' build.gradle
+          echo '=== gradle.properties kotlin ==='
+          rg 'kotlin' gradle.properties
 
       - name: Build Debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -80
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon 2>&1 | tee build-output.txt
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Upload APK
+      - name: Check for APK
         if: always()
+        run: find . -name '*.apk' 2>/dev/null || echo 'No APK found'
+        working-directory: android
+
+      - name: Upload build log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-log
+          path: android/build-output.txt
+
+      - name: Upload APK
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: android/app/build/outputs/apk/debug/*.apk
-          if-no-files-found: ignore
 
       - name: Create GitHub Release
         if: success()
