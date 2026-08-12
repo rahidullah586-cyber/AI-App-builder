@@ -1,0 +1,74 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install --legacy-peer-deps
+
+      - name: Expo prebuild
+        run: npx expo prebuild --platform android --clean
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+          JAVA_HOME: ${{ env.JAVA_HOME }}
+
+      - name: Build Debug APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug
+        env:
+          ANDROID_HOME: /usr/local/lib/android/sdk
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: |
+            android/app/build/outputs/apk/debug/*.apk
+
+      - name: Create Release
+        if: success()
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.0
+          name: "Z AI App v1.0.0"
+          body: |-
+            ## Z AI - Android App
+            Built with Expo | 5 Color Themes | Animated Logo | Chat UI | Voice Input
+            
+            ### Features
+            - Native chat interface with streaming responses
+            - WebView mode for full Z AI web experience
+            - Voice input & text-to-speech
+            - 5 attractive color themes (Indigo, Aurora, Sunset, Ocean, Rose)
+            - Conversation history with search & pin
+            - Persistent memory system
+            - File upload (images, documents)
+            - Dark/Light/System mode
+          files: |
+            android/app/build/outputs/apk/debug/*.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
