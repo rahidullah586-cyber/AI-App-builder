@@ -1,14 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import {
-  View,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  Alert,
-  Text,
-  TextInput,
-  ScrollView,
-} from 'react-native';
+import { View, StyleSheet, Switch, TouchableOpacity, Alert, Text, TextInput, ScrollView } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../theme';
 import { AppSettings, DEFAULT_SETTINGS } from '../utils/types';
@@ -21,11 +12,7 @@ export default function SettingsScreen() {
   const [tempUrl, setTempUrl] = useState('');
 
   useEffect(() => {
-    (async () => {
-      const s = await loadSettings();
-      setSettings(s);
-      setTempUrl(s.zaiWebUrl);
-    })();
+    (async () => { const s = await loadSettings(); setSettings(s); setTempUrl(s.zaiWebUrl); })();
   }, []);
 
   const updateSetting = useCallback(
@@ -37,98 +24,44 @@ export default function SettingsScreen() {
     [settings]
   );
 
-  const themeOptions: { label: string; value: 'light' | 'dark' | 'system' }[] = [
+  const themeOptions = [
     { label: 'Light', value: 'light' },
     { label: 'Dark', value: 'dark' },
     { label: 'System', value: 'system' },
   ];
 
-  const fontOptions: { label: string; value: 'small' | 'medium' | 'large' }[] = [
-    { label: 'Small', value: 'small' },
-    { label: 'Medium', value: 'medium' },
-    { label: 'Large', value: 'large' },
-  ];
-
   const handleClearAllData = () => {
-    Alert.alert(
-      'Clear All Data',
-      'This will delete all conversations, memories, and settings. This cannot be undone.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear Everything', style: 'destructive', onPress: () => {
-          Alert.alert('Done', 'All data cleared. Restart the app.');
-        }},
-      ]
-    );
+    Alert.alert('Clear All Data', 'Delete all conversations and settings?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Clear Everything', style: 'destructive', onPress: () => Alert.alert('Done', 'All data cleared.') },
+    ]);
   };
 
   const renderSection = (title: string, children: React.ReactNode) => (
     <View style={styles.section}>
       <Text style={[styles.sectionTitle, { color: colors.textSecondary }]}>{title}</Text>
-      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-        {children}
-      </View>
-    </View>
-  );
-
-  const renderToggle = (
-    icon: React.ReactNode,
-    label: string,
-    subtitle?: string,
-    value: boolean,
-    onToggle: (v: boolean) => void
-  ) => (
-    <View style={styles.settingRow}>
-      <View style={styles.settingLeft}>
-        {icon}
-        <View style={styles.settingTexts}>
-          <Text style={[styles.settingLabel, { color: colors.text }]}>{label}</Text>
-          {subtitle && (
-            <Text style={[styles.settingSubtitle, { color: colors.textTertiary }]}>{subtitle}</Text>
-          )}
-        </View>
-      </View>
-      <Switch
-        value={value}
-        onValueChange={onToggle}
-        trackColor={{ false: colors.surfaceVariant, true: colors.primary }}
-        thumbColor="#FFFFFF"
-      />
+      <View style={[styles.sectionCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{children}</View>
     </View>
   );
 
   return (
-    <ScrollView
-      style={[styles.container, { backgroundColor: colors.background }]}
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={styles.scrollContent}
-    >
-      {/* App Info */}
+    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
       <View style={styles.appInfo}>
         <View style={[styles.appLogo, { backgroundColor: colors.primaryBg }]}>
           <Text style={[styles.appLogoText, { color: colors.primary }]}>Z</Text>
         </View>
         <Text style={[styles.appName, { color: colors.text }]}>Z AI</Text>
-        <Text style={[styles.appVersion, { color: colors.textTertiary }]}>Version 1.0.0</Text>
+        <Text style={[styles.appVersion, { color: colors.textTertiary }]}>Version 1.1.0</Text>
       </View>
 
-      {/* Connection */}
       {renderSection('Connection', (
         <>
-          <TouchableOpacity
-            style={styles.settingRow}
-            onPress={() => {
-              setTempUrl(settings.zaiWebUrl);
-              setShowUrlEdit(!showUrlEdit);
-            }}
-          >
+          <TouchableOpacity style={styles.settingRow} onPress={() => { setTempUrl(settings.zaiWebUrl); setShowUrlEdit(!showUrlEdit); }}>
             <View style={styles.settingLeft}>
               <Ionicons name="globe-outline" size={22} color={colors.primary} />
               <View style={styles.settingTexts}>
                 <Text style={[styles.settingLabel, { color: colors.text }]}>Z AI Web URL</Text>
-                <Text style={[styles.settingSubtitle, { color: colors.textTertiary }]} numberOfLines={1}>
-                  {settings.zaiWebUrl}
-                </Text>
+                <Text style={[styles.settingSubtitle, { color: colors.textTertiary }]} numberOfLines={1}>{settings.zaiWebUrl}</Text>
               </View>
             </View>
             <Ionicons name="chevron-forward" size={18} color={colors.textTertiary} />
@@ -137,111 +70,35 @@ export default function SettingsScreen() {
             <View style={styles.urlEditRow}>
               <TextInput
                 style={[styles.urlInput, { backgroundColor: colors.inputBg, color: colors.text, borderColor: colors.border }]}
-                value={tempUrl}
-                onChangeText={setTempUrl}
-                placeholder="https://z.ai"
-                placeholderTextColor={colors.textTertiary}
-                autoCapitalize="none"
-                autoCorrect={false}
-                keyboardType="url"
+                value={tempUrl} onChangeText={setTempUrl} placeholder="https://z.ai" placeholderTextColor={colors.textTertiary}
+                autoCapitalize="none" autoCorrect={false} keyboardType="url"
               />
-              <TouchableOpacity
-                style={[styles.urlSaveBtn, { backgroundColor: colors.primary }]}
-                onPress={() => {
-                  updateSetting('zaiWebUrl', tempUrl);
-                  setShowUrlEdit(false);
-                }}
-              >
+              <TouchableOpacity style={[styles.urlSaveBtn, { backgroundColor: colors.primary }]} onPress={() => { updateSetting('zaiWebUrl', tempUrl); setShowUrlEdit(false); }}>
                 <Text style={{ color: '#FFF', fontWeight: '600', fontSize: 14 }}>Save</Text>
               </TouchableOpacity>
             </View>
           )}
-          {renderToggle(
-            <Ionicons name="swap-vertical-outline" size={22} color={colors.primary} />,
-            'Stream Responses',
-            'Show AI responses as they generate',
-            settings.streamResponses,
-            (v) => updateSetting('streamResponses', v)
-          )}
         </>
       ))}
 
-      {/* Appearance */}
       {renderSection('Appearance', (
-        <>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="color-palette-outline" size={22} color={colors.primary} />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Theme</Text>
-            </View>
-            <View style={styles.chipRow}>
-              {themeOptions.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.chip,
-                    { borderColor: colors.border },
-                    themeMode === opt.value && { backgroundColor: colors.primary, borderColor: colors.primary },
-                  ]}
-                  onPress={() => setThemeMode(opt.value)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: colors.textSecondary },
-                      themeMode === opt.value && { color: '#FFFFFF' },
-                    ]}
-                  >
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+        <View style={styles.settingRow}>
+          <View style={styles.settingLeft}>
+            <Ionicons name="color-palette-outline" size={22} color={colors.primary} />
+            <Text style={[styles.settingLabel, { color: colors.text }]}>Theme</Text>
           </View>
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Ionicons name="text-outline" size={22} color={colors.primary} />
-              <Text style={[styles.settingLabel, { color: colors.text }]}>Font Size</Text>
-            </View>
-            <View style={styles.chipRow}>
-              {fontOptions.map((opt) => (
-                <TouchableOpacity
-                  key={opt.value}
-                  style={[
-                    styles.chip,
-                    { borderColor: colors.border },
-                    settings.fontSize === opt.value && { backgroundColor: colors.primary, borderColor: colors.primary },
-                  ]}
-                  onPress={() => updateSetting('fontSize', opt.value)}
-                >
-                  <Text
-                    style={[
-                      styles.chipText,
-                      { color: colors.textSecondary },
-                      settings.fontSize === opt.value && { color: '#FFFFFF' },
-                    ]}
-                  >
-                    {opt.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+          <View style={styles.chipRow}>
+            {themeOptions.map((opt) => (
+              <TouchableOpacity key={opt.value}
+                style={[styles.chip, { borderColor: colors.border }, themeMode === opt.value && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                onPress={() => setThemeMode(opt.value)}>
+                <Text style={[styles.chipText, { color: colors.textSecondary }, themeMode === opt.value && { color: '#FFFFFF' }]}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
           </View>
-        </>
+        </View>
       ))}
 
-      {/* Voice */}
-      {renderSection('Voice', (
-        renderToggle(
-          <Ionicons name="mic-outline" size={22} color={colors.primary} />,
-          'Haptic Feedback',
-          'Vibrate on actions',
-          settings.hapticFeedback,
-          (v) => updateSetting('hapticFeedback', v)
-        )
-      ))}
-
-      {/* Danger Zone */}
       {renderSection('Data', (
         <TouchableOpacity style={styles.dangerBtn} onPress={handleClearAllData}>
           <MaterialCommunityIcons name="delete-sweep-outline" size={22} color="#EF4444" />
@@ -249,9 +106,7 @@ export default function SettingsScreen() {
         </TouchableOpacity>
       ))}
 
-      <Text style={[styles.footer, { color: colors.textTertiary }]}>
-        Built with Expo • Powered by Z AI
-      </Text>
+      <Text style={[styles.footer, { color: colors.textTertiary }]}>Built with Expo • Powered by Z AI</Text>
     </ScrollView>
   );
 }

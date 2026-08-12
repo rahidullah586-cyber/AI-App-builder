@@ -37,29 +37,58 @@ jobs:
         run: rm -rf android
 
       - name: Expo prebuild
-        run: npx expo prebuild --platform android
+        run: npx expo prebuild --platform android --clean
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Force Kotlin 1.9.25 everywhere
+      - name: Configure signing & Kotlin
         run: |
           cd android
-          # 1. Set kotlinVersion variable
+          # Generate debug keystore for release signing (self-signed)
+          keytool -genkeypair -v -keystore release.keystore -alias zai -keyalg RSA -keysize 2048 -validity 10000 -storepass zaiapp123 -keypass zaiapp123 -dname "CN=Z AI, OU=Dev, O=ZAI, L=Islamabad, ST=ISB, C=PK"
+
+          # Fix Kotlin version
           sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/" build.gradle
-          # 2. Explicitly set kotlin-gradle-plugin version in classpath
           sed -i "s/classpath('org.jetbrains.kotlin:kotlin-gradle-plugin')/classpath(\"org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25\")/" build.gradle
-          # 3. Set in gradle.properties too
-          echo '' >> gradle.properties
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
           echo 'kotlinVersion=1.9.25' >> gradle.properties
-          # 4. Verify
-          echo '=== build.gradle ===' 
-          grep -i 'kotlin' build.gradle | head -5
-          echo '=== gradle.properties ==='
-          grep -i 'kotlin' gradle.properties | head -5
 
-      - name: Build Debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+          # Configure release signing
+          cat >> app/build.gradle << 'EOF'
+          android {
+            signingConfigs {
+              release {
+                storeFile file('release.keystore')
+                storePassword 'zaiapp123'
+                keyAlias 'zai'
+                keyPassword 'zaiapp123'
+              }
+            }
+            buildTypes {
+              release {
+                signingConfig signingConfigs.release
+                minifyEnabled true
+                shrinkResources true
+                proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+              }
+            }
+          }
+          EOF
+
+          # Create proguard rules
+          cat > proguard-rules.pro << 'EOF'
+          -keep class com.facebook.react.** { *; }
+          -keep class expo.** { *; }
+          -dontwarn com.facebook.**
+          -keepattributes *Annotation*
+          -keep class * extends com.facebook.react.bridge.NativeModule { *; }
+          -keep class * extends com.facebook.react.bridge.ReactContextBaseJavaModule { *; }
+          -keep class * extends com.facebook.react.uimanager.ViewGroupManager { *; }
+          -keepclassmembers class * { <methods>; }
+          EOF
+
+      - name: Build Release APK
+        run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
@@ -68,27 +97,25 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
-          path: android/app/build/outputs/apk/debug/*.apk
+          path: android/app/build/outputs/apk/release/*.apk
 
       - name: Create GitHub Release
         if: success()
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: "Z AI App v1.0.0"
+          tag_name: v1.1.0
+          name: "Z AI App v1.1.0"
           body: |-
-            ## Z AI - Android App
-            Built with Expo | 5 Color Themes | Animated Logo | Chat UI | Voice Input
-            
+            ## Z AI - Android App (Lightweight)
+            Release build | 5 Color Themes | Chat UI | WebView Mode
+
             ### Features
-            - Native chat interface with streaming responses
+            - Native chat interface
             - WebView mode for full Z AI web experience
-            - Voice input & text-to-speech
             - 5 attractive color themes (Indigo, Aurora, Sunset, Ocean, Rose)
             - Conversation history with search & pin
             - Persistent memory system
-            - File upload (images, documents)
             - Dark/Light/System mode
-          files: android/app/build/outputs/apk/debug/*.apk
+          files: android/app/build/outputs/apk/release/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -3,16 +3,7 @@ export interface ChatMessage {
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: number;
- attachments?: Attachment[];
   isStreaming?: boolean;
-}
-
-export interface Attachment {
-  type: 'image' | 'file' | 'audio';
-  uri: string;
-  name: string;
-  mimeType?: string;
- size?: number;
 }
 
 export interface Conversation {
@@ -35,19 +26,13 @@ export interface MemoryItem {
 export interface AppSettings {
   zaiWebUrl: string;
   themeMode: 'light' | 'dark' | 'system';
-  hapticFeedback: boolean;
-  voiceLanguage: string;
   fontSize: 'small' | 'medium' | 'large';
-  sendOnEnter: boolean;
   streamResponses: boolean;
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
   zaiWebUrl: 'https://z.ai',
   themeMode: 'system',
-  hapticFeedback: true,
-  voiceLanguage: 'en-US',
   fontSize: 'medium',
-  sendOnEnter: false,
   streamResponses: true,
 };
