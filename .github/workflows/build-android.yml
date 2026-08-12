@@ -91,6 +91,7 @@ jobs:
         run: cd android && chmod +x gradlew && ./gradlew assembleRelease --no-daemon
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
+          NODE_ENV: production
 
       - name: Upload APK
         if: success()
