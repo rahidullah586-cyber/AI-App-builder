@@ -44,37 +44,7 @@ export default function MainScreen() {
   }, []);
 
   // JavaScript to improve mobile experience inside z.ai
-  const injectedJS = `
-    (function() {
-      // Set proper viewport
-      var meta = document.querySelector('meta[name="viewport"]');
-      if (!meta) {
-        meta = document.createElement('meta');
-        meta.name = 'viewport';
-        document.head.appendChild(meta);
-      }
-      meta.content = 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
-
-      // Hide scrollbars
-      var style = document.createElement('style');
-      style.textContent = '::-webkit-scrollbar{display:none}body{-ms-overflow-style:none;scrollbar-width:none}';
-      document.head.appendChild(style);
-
-      // Make _blank links open in same webview
-      document.addEventListener('click', function(e) {
-        var link = e.target.closest('a');
-        if (link && link.target === '_blank') {
-          e.preventDefault();
-          window.location.href = link.href;
-        }
-      }, true);
-
-      // Notify React Native when page is ready
-      if (window.ReactNativeWebView) {
-        window.ReactNativeWebView.postMessage(JSON.stringify({type: 'pageReady', url: window.location.href}));
-      }
-    })();
-  `;
+  const injectedJS = 'var m=document.querySelector("meta[name=viewport]");if(!m){m=document.createElement("meta");m.name="viewport";document.head.appendChild(m);}m.content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover";var s=document.createElement("style");s.textContent="::-webkit-scrollbar{display:none}body{-ms-overflow-style:none;scrollbar-width:none}";document.head.appendChild(s);document.addEventListener("click",function(e){var a=e.target.closest("a");if(a&&a.target==="_blank"){e.preventDefault();window.location.href=a.href;}},true);if(window.ReactNativeWebView){window.ReactNativeWebView.postMessage(JSON.stringify({type:"pageReady",url:window.location.href}));}';
 
   const onMessage = useCallback((event: any) => {
     try {
@@ -204,7 +174,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: '#1A1A3E',
   },
   topBtn: { padding: 8, minWidth: 40, alignItems: 'center' },
-  topTitleContainer: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topTitleContainer: { flexDirection: 'row', alignItems: 'center', marginLeft: 8 },
   topTitle: { color: '#E0E0FF', fontSize: 17, fontWeight: '700' },
   logoDot: { width: 10, height: 10, borderRadius: 5, backgroundColor: '#818CF8' },
   webviewContainer: { flex: 1, position: 'relative' },
@@ -212,7 +182,7 @@ const styles = StyleSheet.create({
     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
     justifyContent: 'center', alignItems: 'center', backgroundColor: '#0A0A1A',
   },
-  loadingCard: { alignItems: 'center', gap: 12 },
+  loadingCard: { alignItems: 'center', marginTop: 12 },
   loadingText: { color: '#8888AA', fontSize: 14, marginTop: 4 },
   bottomBar: {
     flexDirection: 'row', justifyContent: 'space-around', alignItems: 'center',
@@ -229,7 +199,7 @@ const styles = StyleSheet.create({
   },
   settingsTitle: { color: '#E0E0FF', fontSize: 20, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
   settingsItem: {
-    flexDirection: 'row', alignItems: 'center', gap: 16,
+    flexDirection: 'row', alignItems: 'center', marginLeft: 16,
     paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: '#1A1A3E',
   },
   settingsItemText: { color: '#E0E0FF', fontSize: 16 },
