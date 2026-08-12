@@ -43,9 +43,11 @@ jobs:
 
       - name: Configure signing & Kotlin
         run: |
-          cd android
+          cd android/app
           # Generate debug keystore for release signing (self-signed)
           keytool -genkeypair -v -keystore release.keystore -alias zai -keyalg RSA -keysize 2048 -validity 10000 -storepass zaiapp123 -keypass zaiapp123 -dname "CN=Z AI, OU=Dev, O=ZAI, L=Islamabad, ST=ISB, C=PK"
+
+          cd ..
 
           # Fix Kotlin version
           sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/" build.gradle
