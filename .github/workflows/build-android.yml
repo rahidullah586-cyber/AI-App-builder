@@ -31,7 +31,7 @@ jobs:
       - name: Install dependencies
         run: npm install --legacy-peer-deps
 
-      - name: Remove old android dir (force fresh prebuild)
+      - name: Remove old android dir
         run: rm -rf android
 
       - name: Expo prebuild
@@ -39,22 +39,32 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Fix Kotlin Compose compatibility
+      - name: Fix Kotlin version & Compose compatibility
         run: |
           cd android
+          # Force Kotlin 1.9.25 to match Compose Compiler 1.5.15
+          sed -i "s/kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.24'/kotlinVersion = findProperty('android.kotlinVersion') ?: '1.9.25'/g" build.gradle
+          # Also set it via gradle.properties
+          echo 'android.kotlinVersion=1.9.25' >> gradle.properties
+          echo 'kotlinVersion=1.9.25' >> gradle.properties
+          # Suppress Compose compiler version check as backup
           echo 'android.suppressUnsupportedOptionKotlinVersionCompatibilityCheck=true' >> gradle.properties
-          echo 'kotlin.code.style=official' >> gradle.properties
+          cat build.gradle | head -15
+          echo '---gradle.properties---'
+          cat gradle.properties | tail -10
 
       - name: Build Debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon --stacktrace 2>&1 | tail -80
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
       - name: Upload APK
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: android-apk
           path: android/app/build/outputs/apk/debug/*.apk
+          if-no-files-found: ignore
 
       - name: Create GitHub Release
         if: success()
