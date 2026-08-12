@@ -20,7 +20,7 @@ export default function MainScreen() {
   }, []);
 
   const goHome = useCallback(() => {
-    webViewRef.current?.injectJavaScript('window.location.href = "' + ZAI_URL + '"');
+    webViewRef.current?.injectJavaScript('window.location.href = "https://z.ai"');
   }, []);
 
   const goBack = useCallback(() => {
@@ -40,14 +40,7 @@ export default function MainScreen() {
   }, [currentUrl]);
 
   const handleNewChat = useCallback(() => {
-    // Z AI uses SPA routing - navigate to new chat
-    webViewRef.current?.injectJavaScript('
-      (function() {
-        const link = document.querySelector("a[href=\'/chat\']") || document.querySelector("[data-testid=\'new-chat\']");
-        if (link) link.click();
-        else window.location.href = "' + ZAI_URL + '";
-      })();
-    ');
+    webViewRef.current?.injectJavaScript('window.location.href = "https://z.ai"');
   }, []);
 
   // JavaScript to improve mobile experience inside z.ai
