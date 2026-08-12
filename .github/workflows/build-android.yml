@@ -39,36 +39,23 @@ jobs:
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
 
-      - name: Fix Kotlin & Compose compatibility
+      - name: Patch Kotlin version to 1.9.25
         run: |
           cd android
-          # Replace the entire kotlinVersion line and force 1.9.25
-          sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/g" build.gradle
-          # Also force it in gradle.properties
+          # Force Kotlin 1.9.25 in build.gradle (match Compose Compiler 1.5.15)
+          sed -i "s/kotlinVersion = findProperty.*/kotlinVersion = '1.9.25'/" build.gradle
+          # Also set via properties as fallback
           echo '' >> gradle.properties
           echo 'android.kotlinVersion=1.9.25' >> gradle.properties
-          # Print to verify
-          echo '=== build.gradle kotlin ===' 
-          rg 'kotlinVersion' build.gradle
-          echo '=== gradle.properties kotlin ==='
-          rg 'kotlin' gradle.properties
+          echo 'kotlinVersion=1.9.25' >> gradle.properties
+          # Verify
+          grep kotlinVersion build.gradle | head -1
+          grep kotlinVersion gradle.properties | head -2
 
       - name: Build Debug APK
-        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon 2>&1 | tee build-output.txt
+        run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
         env:
           ANDROID_HOME: /usr/local/lib/android/sdk
-
-      - name: Check for APK
-        if: always()
-        run: find . -name '*.apk' 2>/dev/null || echo 'No APK found'
-        working-directory: android
-
-      - name: Upload build log on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-log
-          path: android/build-output.txt
 
       - name: Upload APK
         if: success()
